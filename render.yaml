@@ -1,0 +1,14 @@
+services:
+  - type: cron
+    name: grafana-to-sheet-abz
+    runtime: python
+    schedule: "0 * * * *"
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python export_abz.py"
+    envVars:
+      - key: GRAFANA_API_KEY
+        sync: false
+      - key: GOOGLE_SHEET_ID
+        value: 1JeYJqv5q_S3CfC855Tl5xjP7nD5Fkw9jQXrVyvEXK1Y
+      - key: CREDENTIALS_FILE
+        value: credentials.json
