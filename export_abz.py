@@ -3,16 +3,24 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import os
 from datetime import datetime, timezone
+import base64
 
+# 🛠 Восстановление credentials.json из переменной CREDENTIALS_JSON
+if os.getenv("CREDENTIALS_JSON"):
+    with open("credentials.json", "w") as f:
+        f.write(base64.b64decode(os.getenv("CREDENTIALS_JSON")).decode("utf-8"))
+
+# 🔧 Конфигурация Grafana
 GRAFANA_URL = "https://grafana.payda.online"
 GRAFANA_API_KEY = os.getenv("GRAFANA_API_KEY")
 GRAFANA_DATASOURCE_UID = "ce37vo70kfcaob"
 
+# 🔧 Конфигурация Google Sheets
 GOOGLE_SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
 SHEET_NAME = "unique drivers main"
-CREDENTIALS_FILE = os.getenv("CREDENTIALS_FILE", "credentials.json")
+CREDENTIALS_FILE = "credentials.json"
 
-def fetch_data(from_timestamp):
+def fetch_data():
     headers = {
         "Authorization": f"Bearer {GRAFANA_API_KEY}"
     }
@@ -83,17 +91,18 @@ def update_sheet():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, scope)
     client = gspread.authorize(creds)
-    sheet = client.open_by_key(GOOGLE_SHEET_ID).worksheet(SHEET_NAME)
-    last_update_ws = client.open_by_key(GOOGLE_SHEET_ID).worksheet("last update")
 
-    data = fetch_data("2025-05-01 00:00:00")
+    sheet = client.open_by_key(GOOGLE_SHEET_ID).worksheet(SHEET_NAME)
+    meta = client.open_by_key(GOOGLE_SHEET_ID).worksheet("last update")
+
+    data = fetch_data()
     table = data["results"]["A"]["frames"][0]["data"]["values"]
     rows = list(zip(*table))
 
     sheet.append_rows(rows, value_input_option="RAW")
 
     now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-    last_update_ws.update("A1", [[now_str]])
+    meta.update("A1", [[now_str]])
 
 if __name__ == "__main__":
     update_sheet()
