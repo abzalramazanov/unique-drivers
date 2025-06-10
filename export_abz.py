@@ -107,7 +107,7 @@ def update_sheet():
         print(f"✅ Успешно залито {len(rows)} строк в '{SHEET_NAME}'")
 
     # Алматы +6 UTC
-    almaty_time = datetime.utcnow() + timedelta(hours=6)
+    almaty_time = datetime.utcnow() + timedelta(hours=5)
     almaty_str = almaty_time.strftime("%Y-%m-%d %H:%M:%S")
     meta.update(range_name="A1", values=[[almaty_str]])
     print(f"🕓 Время последней загрузки обновлено: {almaty_str}")
