@@ -2,29 +2,24 @@ import requests
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import os
-from datetime import datetime, timezone
-import base64
-
-# 🛠 Восстановление credentials.json из переменной CREDENTIALS_JSON
-if os.getenv("CREDENTIALS_JSON"):
-    with open("credentials.json", "w") as f:
-        f.write(base64.b64decode(os.getenv("CREDENTIALS_JSON")).decode("utf-8"))
+from datetime import datetime, timedelta
 
 # 🔧 Конфигурация Grafana
 GRAFANA_URL = "https://grafana.payda.online"
 GRAFANA_API_KEY = os.getenv("GRAFANA_API_KEY")
 GRAFANA_DATASOURCE_UID = "ce37vo70kfcaob"
 
-# 🔧 Конфигурация Google Sheets
+# 🔧 Google Sheets
 GOOGLE_SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
-SHEET_NAME = "unique drivers main"
 CREDENTIALS_FILE = "credentials.json"
+SHEET_NAME = "unique drivers main"
 
 def fetch_data():
     headers = {
         "Authorization": f"Bearer {GRAFANA_API_KEY}"
     }
-    raw_sql = """
+
+    raw_sql = '''
         SELECT DISTINCT ON (sub.tin)
                sub.name,
                sub.tin,
@@ -40,9 +35,7 @@ def fetch_data():
           FROM awps a
           WHERE a.document_date >= '2025-05-01'
             AND a.buyer_name = 'ТОО "Яндекс.Такси Корп"'
-
           UNION ALL
-
           SELECT a.buyer_name,
                  a.buyer_tin,
                  a.buyer_phone,
@@ -65,7 +58,7 @@ def fetch_data():
         ) AS park_info(id INT, full_name TEXT)
           ON park_info.id = driver_info.park_id
         ORDER BY sub.tin
-    """
+    '''
 
     payload = {
         "queries": [
@@ -89,20 +82,35 @@ def fetch_data():
 
 def update_sheet():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, scope)
+    creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
     client = gspread.authorize(creds)
 
     sheet = client.open_by_key(GOOGLE_SHEET_ID).worksheet(SHEET_NAME)
     meta = client.open_by_key(GOOGLE_SHEET_ID).worksheet("last update")
 
+    print("🚀 Получаем данные из Grafana...")
     data = fetch_data()
-    table = data["results"]["A"]["frames"][0]["data"]["values"]
-    rows = list(zip(*table))
+    values = data["results"]["A"]["frames"][0]["data"]["values"]
+    rows = list(zip(*values))
 
-    sheet.append_rows(rows, value_input_option="RAW")
+    headers = ["name", "tin", "phone", "park_full_name", "Статус АВР", "Статус ЭСФ"]
 
-    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-    meta.update("A1", [[now_str]])
+    print("🧼 Очищаем Google Sheet...")
+    sheet.clear()
+
+    print("📥 Вставляем заголовки...")
+    sheet.update("A1:F1", [headers])
+
+    print(f"📊 Загружаем {len(rows)} строк...")
+    if rows:
+        sheet.append_rows(rows, value_input_option="RAW")
+        print(f"✅ Успешно залито {len(rows)} строк в '{SHEET_NAME}'")
+
+    # Алматы +6 UTC
+    almaty_time = datetime.utcnow() + timedelta(hours=6)
+    almaty_str = almaty_time.strftime("%Y-%m-%d %H:%M:%S")
+    meta.update(range_name="A1", values=[[almaty_str]])
+    print(f"🕓 Время последней загрузки обновлено: {almaty_str}")
 
 if __name__ == "__main__":
     update_sheet()
