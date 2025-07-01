@@ -33,7 +33,7 @@ def fetch_data():
                  a.seller_phone AS phone,
                  a.pdf_id
           FROM awps a
-          WHERE a.document_date >= '2025-05-01'
+          WHERE a.document_date >= '2025-06-01'
             AND a.buyer_name = 'ТОО "Яндекс.Такси Корп"'
           UNION ALL
           SELECT a.buyer_name,
@@ -41,7 +41,7 @@ def fetch_data():
                  a.buyer_phone,
                  a.pdf_id
           FROM awps a
-          WHERE a.document_date >= '2025-05-01'
+          WHERE a.document_date >= '2025-06-01'
             AND a.seller_name = 'ТОО "Яндекс.Такси Корп"'
         ) sub
         LEFT JOIN documents pdf_file ON pdf_file.id::text = sub.pdf_id
