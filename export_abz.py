@@ -34,7 +34,7 @@ def fetch_data():
                  a.pdf_id
           FROM awps a
           WHERE a.document_date >= '2025-06-01'
-            AND a.buyer_name = 'ТОО "Яндекс.Такси Корп"'
+            AND a.buyer_name = 'ТОО "Y. Taxi Qazaqstan"'
           UNION ALL
           SELECT a.buyer_name,
                  a.buyer_tin,
@@ -42,7 +42,7 @@ def fetch_data():
                  a.pdf_id
           FROM awps a
           WHERE a.document_date >= '2025-06-01'
-            AND a.seller_name = 'ТОО "Яндекс.Такси Корп"'
+            AND a.seller_name = 'ТОО "Y. Taxi Qazaqstan"'
         ) sub
         LEFT JOIN documents pdf_file ON pdf_file.id::text = sub.pdf_id
         LEFT JOIN esfs esf ON esf.related_document_id::text = pdf_file.id::text
