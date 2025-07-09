@@ -57,7 +57,7 @@ def fetch_data():
           'SELECT id, full_name FROM users_client'
         ) AS park_info(id INT, full_name TEXT)
           ON park_info.id = driver_info.park_id
-        ORDER BY sub.tin
+        ORDER BY sub.tin, (COALESCE(esf_file.current_status, '') = '') ASC
     '''
 
     payload = {
@@ -106,7 +106,7 @@ def update_sheet():
         sheet.append_rows(rows, value_input_option="RAW")
         print(f"✅ Успешно залито {len(rows)} строк в '{SHEET_NAME}'")
 
-    # Алматы +6 UTC
+    # Алматы +5 UTC
     almaty_time = datetime.utcnow() + timedelta(hours=5)
     almaty_str = almaty_time.strftime("%Y-%m-%d %H:%M:%S")
     meta.update(range_name="A1", values=[[almaty_str]])
